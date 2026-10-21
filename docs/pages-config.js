@@ -1,0 +1,3 @@
+window.ALED_BACKEND_ORIGIN='https://aled-99-hudson-maintenance.vnwmedia.chatgpt.site';
+window.aledSessionToken=function(){const key='aled-hudson-session-v1';let token=localStorage.getItem(key);if(!/^[a-f0-9]{64}$/.test(token||'')){token=Array.from(crypto.getRandomValues(new Uint8Array(32)),b=>b.toString(16).padStart(2,'0')).join('');localStorage.setItem(key,token)}return token};
+window.aledApiFetch=async function(path,options={}){let token;try{token=window.aledSessionToken()}catch{throw new Error('Browser storage is unavailable. Please allow website storage to manage your appointments.')}return fetch(window.ALED_BACKEND_ORIGIN+path,{...options,headers:{...options.headers,Authorization:'Bearer '+token}})};

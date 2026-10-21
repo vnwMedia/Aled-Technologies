@@ -66,3 +66,15 @@ Before resident launch, confirm appointment duration, eligible service days, yea
 - `scripts/test-bookings.mjs`: local integration verification.
 
 Never commit credentials, local databases, runtime directories, or resident records.
+
+## GitHub Pages frontend
+
+`docs/` is the static frontend for `https://vnwmedia.github.io/Aled-Technologies/`.
+Regenerate it with `python3 scripts/build-pages.py` after changing shared page content.
+Configure GitHub Pages to publish `main` → `/docs`.
+
+GitHub Pages serves the interface. The Sites Worker continues to own shared D1 availability and records, so capacity is shared across browsers. The backend must allow public visits for the Pages API to be reachable; the existing account-owned endpoints still require sign-in. No booking records, environment values, session tokens, or database files are published in the repository.
+
+The Pages API accepts only the approved GitHub origin in browsers. A cryptographically random browser token is hashed into a separate record owner namespace; it never grants access to previous account-owned appointments. A visitor can view and cancel only requests made with that browser token. Clearing browser storage loses that management session. There are no tokens or secrets embedded in the static frontend. Email delivery still uses the explicit form submission and fixed notification inbox.
+
+Run `node scripts/test-pages-api.mjs` against the local built Worker to verify origin checks, session isolation, shared storage and cancellation.
