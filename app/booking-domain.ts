@@ -1,5 +1,6 @@
 export const START_DATE = '2026-11-02';
-export const TIMES = Array.from({length:10},(_,i)=>{const m=510+i*30,h=Math.floor(m/60);return `${h%12||12}:${String(m%60).padStart(2,'0')} ${h<12?'AM':'PM'}`});
+export const ALL_TIMES = Array.from({length:10},(_,i)=>{const m=510+i*30,h=Math.floor(m/60);return `${h%12||12}:${String(m%60).padStart(2,'0')} ${h<12?'AM':'PM'}`});
+export const TIMES = ALL_TIMES.slice(0,5);
 export function validDate(value:unknown):value is string {
  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
  const d=new Date(value+'T12:00:00Z');
@@ -9,7 +10,7 @@ export function normalizeApartment(value:string){return value.toUpperCase().repl
 export function validateBooking(b:any):string|null {
  if(!b||typeof b!=='object')return 'Invalid request.';
  if(!validDate(b.date))return 'Choose a valid date on or after November 2, 2026, that is not in the past.';
- if(!Number.isInteger(b.slot)||b.slot<0||b.slot>9)return 'Choose one of the 10 appointment times.';
+ if(!Number.isInteger(b.slot)||b.slot<0||b.slot>=TIMES.length)return 'Choose one of the 5 appointment times.';
  for(const key of ['name','apartment','email','phone','requestKey'])if(typeof b[key]!=='string')return 'Please complete all required fields.';
  if(b.name.trim().length<2||b.name.length>120)return 'Enter your full name (2–120 characters).';
  if(!/^[a-zA-Z0-9 -]{1,20}$/.test(b.apartment.trim())||!normalizeApartment(b.apartment))return 'Enter a valid apartment number.';

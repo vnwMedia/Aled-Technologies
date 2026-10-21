@@ -4,16 +4,16 @@ A working resident maintenance scheduling prototype. The contact bar, logo, hero
 
 ## Features
 
-- Ten slots every day from November 2, 2026, starting at 8:30 AM Eastern.
+- Five time choices with two apartments per time (ten appointments total) every day from November 2, 2026, at 8:30, 9:00, 9:30, 10:00, and 10:30 AM Eastern.
 - Thirty-minute start intervals are a prototype assumption pending client confirmation.
 - Required name, apartment number, number of units, email, and phone fields.
-- Shared Cloudflare D1 storage, server validation, atomic prevention of double bookings, one active request per apartment per day, and retry-safe submissions.
+- Shared Cloudflare D1 storage, server validation, atomic capacity enforcement (maximum two apartments per start time), one active request per apartment per day, and retry-safe submissions.
 - Account-scoped appointment history and cancellation; canceled slots become available again.
 - Daily status is calculated from active, distinct apartment requests: fewer than five is pending; five or more is confirmed. Cancellation can return a day to pending.
 - Calendar downloads reflect the status at download time. Their 30-minute end time is a placeholder; downloaded calendar events do not auto-update after changes.
-- New submissions send a sample notification to `contactus@vnwmedia.com` using FormSubmit. The recipient completed inbox activation and confirmed receipt of a sample test. Reply-To uses the submitted email; no automatic email is sent to the resident.
+- New submissions use FormSubmit’s documented browser AJAX integration to send a sample notification to `contactus@vnwmedia.com` using FormSubmit. The recipient completed inbox activation and confirmed receipt of a sample test. Reply-To uses the submitted email; no automatic email is sent to the resident.
 - After a successful save, the form redirects to an authenticated `/thank-you?id=…` receipt with appointment details and notification status. Email failures do not discard the booking.
-- Notification attempts use an atomic database claim to avoid duplicate sends. Timeouts are treated as uncertain and are not automatically replayed.
+- Notification attempts use an atomic database claim to avoid duplicate sends. A one-use attempt token and the signed-in account protect result reporting. Timeouts and rate limits are recorded without automatic replay; email failures do not remove saved appointments.
 
 ## Run locally
 
@@ -25,6 +25,8 @@ npm run db:generate # only after changing db/schema.ts
 npm run build
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_organic_the_captain.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_overrated_lady_ursula.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_amused_romulus.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0003_opposite_leopardon.sql
 npm run dev
 ```
 
@@ -55,7 +57,9 @@ Before resident launch, confirm appointment duration, eligible service days, yea
 - `public/booking.js`: form, availability, history, cancellation, calendar export.
 - `app/api/appointments/route.ts`: authenticated database API.
 - `app/booking-domain.ts`: validation and slot definitions.
-- `app/form-email.ts`: notification provider and duplicate-send protection.
+- `app/form-email.ts`: server-owned notification payload and duplicate-send protection.
+- `public/form-notification.js`: browser delivery and result reporting.
+- `app/api/notification-result/route.ts`: protected one-use result recording.
 - `app/thank-you/route.ts`: private appointment receipt.
 - `db/schema.ts`, `drizzle/`: persistent schema and migration.
 - `scripts/test-bookings.mjs`: local integration verification.

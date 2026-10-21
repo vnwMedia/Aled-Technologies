@@ -1,0 +1,1 @@
+ALTER TABLE `appointments` ADD `notification_attempt` text;
