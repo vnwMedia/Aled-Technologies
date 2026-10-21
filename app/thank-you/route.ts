@@ -1,0 +1,28 @@
+import {env} from 'cloudflare:workers';
+import sourceHtml from '../site-html';
+import {TIMES} from '../booking-domain';
+export const dynamic='force-dynamic';
+function escape(value:unknown){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!))}
+function response(content:string,status=200){
+ const head=sourceHtml.slice(0,sourceHtml.indexOf('<main class="wrap">')).replace('<h1>99 Hudson St. Apartments<br>– Maintenance</h1>','<h1>Your maintenance request</h1>').replace('A little maintenance. A lot of peace of mind.<br>Choose a convenient appointment and leave your details below.','99 Hudson St. Apartments<br>Review your request details and manage your appointment below.');
+ const tail=sourceHtml.slice(sourceHtml.indexOf('<div class="notice">'),sourceHtml.indexOf('<script'));
+ const html=head.replace('<title>99 Hudson St. Apartments – Maintenance</title>','<title>Thank you | ALED Technologies</title>')+`<main class="thank-you-container" style="max-width:1120px;margin:40px auto 56px;padding:0 24px"><section class="panel" style="max-width:760px;margin:auto">${content}</section></main>`+tail+'</body></html>';
+ return new Response(html,{status,headers:{'Content-Type':'text/html; charset=utf-8','Cache-Control':'private, no-store','Referrer-Policy':'same-origin','X-Content-Type-Options':'nosniff'}});
+}
+export async function GET(req:Request){
+ const uid=req.headers.get('oai-authenticated-user-id');
+ if(!uid)return response('<h2>Please sign in</h2><p>Sign in with the account used to submit your appointment.</p><a href="/signin-with-chatgpt?return_to=%2F" target="_top">Sign in</a>',401);
+ const id=new URL(req.url).searchParams.get('id');
+ if(!id||!/^[a-f\d-]{36}$/i.test(id))return response('<h2>No request selected</h2><p>Submit the maintenance form to see your request receipt here.</p><a href="/">Return to scheduling</a>',404);
+ try{
+ const db=(env as any).DB;
+ const a=await db.prepare(`SELECT a.*,(SELECT COUNT(*) FROM appointments b WHERE b.date=a.date AND b.canceled_at IS NULL) AS day_count FROM appointments a WHERE a.id=? AND a.user_id=?`).bind(id,uid).first();
+ if(!a)return response('<h2>Request not found</h2><p>Return to the scheduling page to view requests made with your account.</p><a href="/">View your appointments</a>',404);
+ const date=new Date(a.date+'T12:00:00Z').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'UTC'});
+ const state=a.canceled_at?'Canceled':a.day_count>=5?'Confirmed':'Pending daily minimum';
+ const recipient=escape((env as any).FORM_NOTIFICATION_TO||'the notification inbox');
+ const messages:Record<string,string>={accepted:`A notification was submitted to our email service for ${recipient}. Inbox delivery is not yet verified.`,activation_required:`Your request is saved. Email delivery is awaiting a one-time inbox activation by the site team.`,failed:'Your request is saved, but its email notification could not be sent. Please contact the team if you need help.',unknown:'Your request is saved. We could not verify whether the email service accepted its notification. Please avoid resubmitting your appointment.',not_configured:'Your request is saved. Email notifications are not configured yet.',sending:'Your request is saved and its email notification is being processed.',pending:'Your request is saved and its email notification is pending.',not_requested:'This request was created before email notifications were enabled.'};
+ const heading=a.canceled_at?'This request has been canceled':'Thank you. Your request is saved.';
+ return response(`<div class="eyebrow" style="color:var(--muted)">99 HUDSON RESIDENT MAINTENANCE</div><h2 style="font:34px/1.2 Georgia;margin:15px 0">${heading}</h2><p>${a.canceled_at?'You can choose another appointment on the scheduling page.':'We’ve received your maintenance request. Here are the details for your records.'}</p><div class="summary"><strong>${escape(state)}</strong><br>${escape(date)} · ${escape(TIMES[a.slot])} ET</div><dl style="display:grid;grid-template-columns:1fr 1fr;gap:10px 20px;margin:24px 0"><dt>Name</dt><dd style="margin:0">${escape(a.name)}</dd><dt>Apartment</dt><dd style="margin:0">${escape(a.apartment)}</dd><dt>Number of units</dt><dd style="margin:0">${escape(a.units)}</dd><dt>Reference</dt><dd style="margin:0">${escape(a.id.slice(0,8).toUpperCase())}</dd></dl><p>${messages[a.notification_state]||messages.unknown}</p><p style="font-size:13px;color:var(--muted)">${a.canceled_at?'Canceled requests do not count toward the daily minimum.':a.day_count>=5?'This day has reached the minimum of five apartments.':`${Math.max(0,5-a.day_count)} more apartment(s) are needed to confirm this day. Return to the portal for current status.`}</p><a class="submit" style="display:block;text-align:center;text-decoration:none;margin-top:25px" href="/#my-bookings">View or manage your appointments →</a>`);
+ }catch{return response('<h2>Your receipt could not be loaded</h2><p>Your request may still be saved. Please check your appointments before submitting again.</p><a href="/">View your appointments</a>',503)}
+}

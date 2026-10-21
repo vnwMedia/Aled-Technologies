@@ -1,11 +1,12 @@
 import { env } from 'cloudflare:workers';
+import { notifyAppointment } from '../../form-email';
 import { normalizeApartment, validDate, validateBooking } from '../../booking-domain';
 export const dynamic='force-dynamic';
 function json(value:unknown,status=200){return Response.json(value,{status,headers:{'Cache-Control':'no-store'}})}
 function user(req:Request){return req.headers.get('oai-authenticated-user-id')}
 function sameOrigin(req:Request){return req.headers.get('Origin')===new URL(req.url).origin}
 function db(){const binding=(env as any).DB;if(!binding)throw new Error('Database unavailable');return binding}
-async function list(userId:string){return (await db().prepare(`SELECT a.id,a.date,a.slot,a.name,a.apartment,a.units,a.email,a.phone,a.canceled_at,
+async function list(userId:string){return (await db().prepare(`SELECT a.id,a.date,a.slot,a.name,a.apartment,a.units,a.email,a.phone,a.canceled_at,a.notification_state,
  (SELECT COUNT(*) FROM appointments b WHERE b.date=a.date AND b.canceled_at IS NULL) AS day_count
  FROM appointments a WHERE a.user_id=? ORDER BY a.created_at DESC LIMIT 100`).bind(userId).all()).results}
 export async function GET(req:Request){
@@ -23,9 +24,10 @@ export async function POST(req:Request){
  try{
  const existing=await db().prepare('SELECT id FROM appointments WHERE user_id=? AND request_key=?').bind(uid,body.requestKey).first();if(existing)return json({id:existing.id,appointments:await list(uid)});
  const id=crypto.randomUUID();
- await db().prepare('INSERT INTO appointments (id,user_id,request_key,date,slot,name,apartment,apartment_key,units,email,phone,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,uid,body.requestKey,body.date,body.slot,body.name.trim(),body.apartment.trim(),normalizeApartment(body.apartment),body.units,body.email.trim(),body.phone.trim(),new Date().toISOString()).run();
+ await db().prepare('INSERT INTO appointments (id,user_id,request_key,date,slot,name,apartment,apartment_key,units,email,phone,created_at,notification_state) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)').bind(id,uid,body.requestKey,body.date,body.slot,body.name.trim(),body.apartment.trim(),normalizeApartment(body.apartment),body.units,body.email.trim(),body.phone.trim(),new Date().toISOString(),'pending').run();
+ await notifyAppointment(db(), env as any, id, new URL(req.url).origin);
  return json({id,appointments:await list(uid)},201);
- }catch(e){if(String(e).includes('UNIQUE constraint failed'))return json({error:'That time or apartment already has a request for this day. Select another time or review your appointments.'},409);return json({error:'Your request could not be saved. Please try again.'},503)}
+ }catch(e){if(String(e).includes('UNIQUE constraint failed')){const repeated=await db().prepare('SELECT id FROM appointments WHERE user_id=? AND request_key=?').bind(uid,body.requestKey).first();if(repeated)return json({id:repeated.id,appointments:await list(uid)});return json({error:'That time or apartment already has a request for this day. Select another time or review your appointments.'},409);}return json({error:'Your request could not be saved. Please try again.'},503)}
 }
 export async function DELETE(req:Request){
  const uid=user(req);if(!uid)return json({error:'Please sign in to manage appointments.'},401);

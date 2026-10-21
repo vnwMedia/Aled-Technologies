@@ -11,7 +11,9 @@ A working resident maintenance scheduling prototype. The contact bar, logo, hero
 - Account-scoped appointment history and cancellation; canceled slots become available again.
 - Daily status is calculated from active, distinct apartment requests: fewer than five is pending; five or more is confirmed. Cancellation can return a day to pending.
 - Calendar downloads reflect the status at download time. Their 30-minute end time is a placeholder; downloaded calendar events do not auto-update after changes.
-- Email notifications are not configured. The interface states this explicitly. Residents check the portal for current status.
+- New submissions send a sample notification to `contactus@vnwmedia.com` using FormSubmit. The recipient completed inbox activation and confirmed receipt of a sample test. Reply-To uses the submitted email; no automatic email is sent to the resident.
+- After a successful save, the form redirects to an authenticated `/thank-you?id=…` receipt with appointment details and notification status. Email failures do not discard the booking.
+- Notification attempts use an atomic database claim to avoid duplicate sends. Timeouts are treated as uncertain and are not automatically replayed.
 
 ## Run locally
 
@@ -22,6 +24,7 @@ npm run install:ci
 npm run db:generate # only after changing db/schema.ts
 npm run build
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0000_organic_the_captain.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_overrated_lady_ursula.sql
 npm run dev
 ```
 
@@ -33,6 +36,7 @@ Run the migration only once per fresh local database. Open the displayed loopbac
 npm start -- --port 8766
 # In another terminal:
 node scripts/test-bookings.mjs
+node scripts/test-form-email.mjs
 ```
 
 The integration test refuses non-loopback targets. It checks validation, authentication, same-origin writes, retry safety, duplicate apartments, simultaneous booking conflicts, ten-slot capacity, the five-apartment threshold, account isolation, cancellation, and reopened slots. Test records are canceled in a finally block and stay in local storage only.
@@ -41,7 +45,9 @@ The integration test refuses non-loopback targets. It checks validation, authent
 
 The existing private Site is declared in `.openai/hosting.json`. Deploy through Sites so it provisions D1, applies the checked-in Drizzle migration, and provides authentication. GitHub is source hosting; GitHub Pages cannot run this database-backed application.
 
-Before resident launch, confirm the appointment duration, eligible service days, year, meaning of “units,” and email delivery workflow. No resident email or SMS messages are sent by this prototype.
+Hosted runtime configuration: `FORM_EMAIL_ENABLED=true` and `FORM_NOTIFICATION_TO=contactus@vnwmedia.com`. These are set through Sites environment settings, not checked-in secrets. Local tests keep email sending disabled unless explicitly configured.
+
+Before resident launch, confirm appointment duration, eligible service days, year, meaning of “units,” and the final notification inbox. FormSubmit activation is required when changing the recipient. Provider acceptance does not guarantee inbox delivery. No resident autoresponse or SMS is sent by this prototype.
 
 ## Source map
 
@@ -49,6 +55,8 @@ Before resident launch, confirm the appointment duration, eligible service days,
 - `public/booking.js`: form, availability, history, cancellation, calendar export.
 - `app/api/appointments/route.ts`: authenticated database API.
 - `app/booking-domain.ts`: validation and slot definitions.
+- `app/form-email.ts`: notification provider and duplicate-send protection.
+- `app/thank-you/route.ts`: private appointment receipt.
 - `db/schema.ts`, `drizzle/`: persistent schema and migration.
 - `scripts/test-bookings.mjs`: local integration verification.
 

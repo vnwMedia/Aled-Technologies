@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import ts from 'typescript';
+const dataUrl=s=>'data:text/javascript;base64,'+Buffer.from(s).toString('base64');
+const domain=ts.transpileModule(await readFile(new URL('../app/booking-domain.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.ESNext}}).outputText;
+const source=(await readFile(new URL('../app/form-email.ts',import.meta.url),'utf8')).replace("'./booking-domain'",JSON.stringify(dataUrl(domain)));
+const {sendFormEmail,notificationResult,notifyAppointment}=await import(dataUrl(ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.ESNext}}).outputText));
+const config={FORM_NOTIFICATION_TO:'contactus@vnwmedia.com',FORM_EMAIL_ENABLED:'true'},appointment={name:'Sample Resident',email:'resident@example.com',apartment:'1204',units:2,phone:'2015550123',date:'2026-11-02',slot:0,id:'test-reference'};
+let calls=0;
+assert.equal(await sendFormEmail({},appointment,'https://example.test',async()=>{throw Error('must not send')}),'not_configured');
+assert.equal(await sendFormEmail(config,appointment,'https://example.test',async(url,options)=>{calls++;assert.equal(url,'https://formsubmit.co/ajax/contactus%40vnwmedia.com');const b=JSON.parse(options.body);assert.equal(b['Apartment Number'],'1204');assert.equal(b['Requested Time'],'8:30 AM Eastern Time');assert.equal(b._replyto,'resident@example.com');assert.equal(options.method,'POST');return Response.json({success:'true',message:'Submitted successfully.'})}),'accepted');assert.equal(calls,1);
+assert.equal(notificationResult(true,{success:'false',message:"This form needs Activation. We've sent you an email containing an Activate Form link."}),'activation_required');
+assert.equal(await sendFormEmail(config,appointment,'https://example.test',async()=>Response.json({success:false},{status:429})),'failed');
+assert.equal(await sendFormEmail(config,appointment,'https://example.test',async()=>new Response('bad gateway',{status:502})),'unknown');
+assert.equal(await sendFormEmail(config,appointment,'https://example.test',async()=>{throw Error('timeout')}),'unknown');
+let reads=0;await notifyAppointment({prepare(){return {bind(){return this},run:async()=>({meta:{changes:0}}),first:async()=>{reads++;return appointment}}}},config,'test-reference','https://example.test');assert.equal(reads,0);
+console.log('PASS: fixed recipient, complete email payload, provider acceptance, activation, failure, ambiguous response, timeout, disabled configuration and duplicate-send claim.');

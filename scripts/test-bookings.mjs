@@ -10,7 +10,8 @@ try{
  assert.equal((await request('POST','',{...booking(0),date:'2027-02-30'})).status,400);
  assert.equal((await request('POST','',{...booking(0),units:1.5})).status,400);
  assert.equal((await request('POST','',{...booking(0),slot:10})).status,400);
- const first=booking(0);let r=await request('POST','',first);assert.equal(r.status,201);created.push(r.body.id);assert.equal(r.body.appointments[0].day_count,1);
+ const first={...booking(0),name:'<sample resident>'};let r=await request('POST','',first);assert.equal(r.status,201);created.push(r.body.id);assert.equal(r.body.appointments[0].day_count,1);assert.equal(r.body.appointments[0].notification_state,'not_configured');
+ const receipt=await fetch(base+'/thank-you?id='+r.body.id,{headers:{'oai-authenticated-user-id':uid}});assert.equal(receipt.status,200);const html=await receipt.text();assert.ok(html.includes('Thank you. Your request is saved.'));assert.ok(html.includes('&lt;sample resident&gt;'));assert.ok(!html.includes('<sample resident>'));assert.equal((await fetch(base+'/thank-you?id='+r.body.id,{headers:{'oai-authenticated-user-id':other}})).status,404);assert.equal((await fetch(base+'/thank-you?id='+r.body.id)).status,401);
  r=await request('POST','',first);assert.equal(r.status,200);assert.equal(r.body.id,created[0]);
  assert.equal((await request('POST','',booking(1,'9000'))).status,409);
  const competing=await Promise.all([request('POST','',booking(1,'A-9001')),request('POST','',booking(1,'A9002'))]);assert.deepEqual(competing.map(x=>x.status).sort(),[201,409]);created.push(competing.find(x=>x.status===201).body.id);
@@ -22,5 +23,5 @@ try{
  for(const id of created.slice(0,6)){assert.equal((await request('DELETE','',{id})).status,200)}
  r=await request('GET');assert.equal(r.body.appointments.filter(a=>!a.canceled_at).every(a=>a.day_count===4),true);
  r=await request('POST','',booking(0));assert.equal(r.status,201);created.push(r.body.id);
- console.log('PASS: validation, authentication, origin checks, idempotency, duplicate apartments, concurrent booking, 10-slot capacity, five-apartment threshold, account isolation, cancellation and reopened slots.');
+ console.log('PASS: validation, authentication, origin checks, idempotency, duplicate apartments, concurrent booking, 10-slot capacity, five-apartment threshold, account isolation, cancellation, reopened slots, protected thank-you receipt and HTML escaping.');
 }finally{for(const id of created)await request('DELETE','',{id});}

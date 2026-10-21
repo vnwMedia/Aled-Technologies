@@ -1,0 +1,1 @@
+ALTER TABLE `appointments` ADD `notification_state` text DEFAULT 'not_requested' NOT NULL;
