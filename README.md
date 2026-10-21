@@ -4,8 +4,8 @@ A working resident maintenance scheduling prototype. The contact bar, logo, hero
 
 ## Features
 
-- Five time choices with two apartments per time (ten appointments total) every day from November 2, 2026, at 8:30, 9:00, 9:30, 10:00, and 10:30 AM Eastern.
-- Thirty-minute start intervals are a prototype assumption pending client confirmation.
+- Five time choices with two apartments per time (ten appointments total) every day from November 2, 2026, at 8:30 AM, 10:15 AM, noon, 1:45 PM, and 3:30 PM Eastern.
+- The five start times are evenly distributed over the 8:30 AM–3:30 PM window. Each can be selected twice. Existing bookings retain their originally scheduled times.
 - Required name, apartment number, number of units, email, and phone fields.
 - Shared Cloudflare D1 storage, server validation, atomic capacity enforcement (maximum two apartments per start time), one active request per apartment per day, and retry-safe submissions.
 - Account-scoped appointment history and cancellation; canceled slots become available again.
@@ -27,6 +27,7 @@ node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0001_overrated_lady_ursula.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0002_amused_romulus.sql
 node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0003_opposite_leopardon.sql
+node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js d1 execute DB --local --config dist/server/wrangler.json --persist-to .wrangler/state --file drizzle/0004_smart_princess_powerful.sql
 npm run dev
 ```
 

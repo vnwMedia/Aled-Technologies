@@ -1,6 +1,10 @@
 export const START_DATE = '2026-11-02';
-export const ALL_TIMES = Array.from({length:10},(_,i)=>{const m=510+i*30,h=Math.floor(m/60);return `${h%12||12}:${String(m%60).padStart(2,'0')} ${h<12?'AM':'PM'}`});
-export const TIMES = ALL_TIMES.slice(0,5);
+export const SLOT_MINUTES = [510,615,720,825,930];
+export function formatTime(minutes:number){const h=Math.floor(minutes/60);return `${h%12||12}:${String(minutes%60).padStart(2,'0')} ${h<12?'AM':'PM'}`;}
+// Historical rows retain the 30-minute schedule that was active when booked.
+export function appointmentMinutes(a:{start_minutes?:number|null;slot:number}){return a.start_minutes??510+a.slot*30;}
+export function appointmentTime(a:{start_minutes?:number|null;slot:number}){return formatTime(appointmentMinutes(a));}
+export const TIMES = SLOT_MINUTES.map(formatTime);
 export function validDate(value:unknown):value is string {
  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
  const d=new Date(value+'T12:00:00Z');
