@@ -21,6 +21,7 @@ export function validateBooking(b:any):string|null {
  if(!Number.isInteger(b.units)||b.units<1||b.units>100)return 'Number of units must be a whole number from 1 to 100.';
  if(b.email.length>254||! /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(b.email.trim()))return 'Enter a valid email address.';
  if(b.phone.length>40||b.phone.replace(/\D/g,'').length<10||b.phone.replace(/\D/g,'').length>15)return 'Enter a valid phone number.';
+ if(b.comments!==undefined&&(typeof b.comments!=='string'||b.comments.length>2000))return 'Additional comments must be 2,000 characters or fewer.';
  if(!/^[\w-]{16,64}$/.test(b.requestKey))return 'Invalid request identifier. Please refresh and try again.';
  return null;
 }

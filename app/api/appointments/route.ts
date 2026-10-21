@@ -6,7 +6,7 @@ function json(value:unknown,status=200){return Response.json(value,{status,heade
 function user(req:Request){return req.headers.get('oai-authenticated-user-id')}
 function sameOrigin(req:Request){return req.headers.get('Origin')===new URL(req.url).origin}
 function db(){const binding=(env as any).DB;if(!binding)throw new Error('Database unavailable');return binding}
-async function list(userId:string){return (await db().prepare(`SELECT a.id,a.date,a.slot,COALESCE(a.start_minutes,510+a.slot*30) AS start_minutes,a.name,a.apartment,a.units,a.email,a.phone,a.canceled_at,a.notification_state,
+async function list(userId:string){return (await db().prepare(`SELECT a.id,a.date,a.slot,COALESCE(a.start_minutes,510+a.slot*30) AS start_minutes,a.name,a.apartment,a.units,a.email,a.phone,a.comments,a.canceled_at,a.notification_state,
  (SELECT COUNT(*) FROM appointments b WHERE b.date=a.date AND b.canceled_at IS NULL) AS day_count
  FROM appointments a WHERE a.user_id=? ORDER BY a.created_at DESC LIMIT 100`).bind(userId).all()).results}
 export async function GET(req:Request){
@@ -24,11 +24,11 @@ export async function POST(req:Request){
  try{
  const existing=await db().prepare('SELECT id FROM appointments WHERE user_id=? AND request_key=?').bind(uid,body.requestKey).first();if(existing)return json({id:existing.id,appointments:await list(uid)});
  const id=crypto.randomUUID();
- const inserted=await db().prepare(`INSERT INTO appointments (id,user_id,request_key,date,slot,name,apartment,apartment_key,units,email,phone,created_at,notification_state,capacity_position,start_minutes)
- SELECT ?,?,?,?,?,?,?,?,?,?,?,?,'pending',candidate.position,? FROM (SELECT 0 AS position UNION ALL SELECT 1) candidate
+ const inserted=await db().prepare(`INSERT INTO appointments (id,user_id,request_key,date,slot,name,apartment,apartment_key,units,email,phone,created_at,notification_state,capacity_position,start_minutes,comments)
+ SELECT ?,?,?,?,?,?,?,?,?,?,?,?,'pending',candidate.position,?,? FROM (SELECT 0 AS position UNION ALL SELECT 1) candidate
  WHERE NOT EXISTS (SELECT 1 FROM appointments a WHERE a.date=? AND COALESCE(a.start_minutes,510+a.slot*30)=? AND a.capacity_position=candidate.position AND a.canceled_at IS NULL)
  AND (SELECT COUNT(*) FROM appointments a WHERE a.date=? AND a.canceled_at IS NULL)<10
- ORDER BY candidate.position LIMIT 1`).bind(id,uid,body.requestKey,body.date,body.slot,body.name.trim(),body.apartment.trim(),normalizeApartment(body.apartment),body.units,body.email.trim(),body.phone.trim(),new Date().toISOString(),SLOT_MINUTES[body.slot],body.date,SLOT_MINUTES[body.slot],body.date).run();
+ ORDER BY candidate.position LIMIT 1`).bind(id,uid,body.requestKey,body.date,body.slot,body.name.trim(),body.apartment.trim(),normalizeApartment(body.apartment),body.units,body.email.trim(),body.phone.trim(),new Date().toISOString(),SLOT_MINUTES[body.slot],(body.comments||'').trim(),body.date,SLOT_MINUTES[body.slot],body.date).run();
  if(inserted.meta.changes!==1)return json({error:'That time already has two appointments, or this day is full. Choose another time or day.'},409);
  const notification=await prepareNotification(db(), env as any, id, uid, new URL(req.url).origin);
  return json({id,notification,appointments:await list(uid)},201);

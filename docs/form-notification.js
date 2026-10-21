@@ -1,18 +1,14 @@
-// FormSubmit's documented browser AJAX integration. A submission is attempted once;
-// rate limits and uncertain results are never automatically replayed.
-window.sendFormNotification=async function(notification){
- if(!notification)return 'not_configured';
- let state='unknown';
- try{
-  const response=await fetch(notification.endpoint,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},signal:AbortSignal.timeout(12000),body:JSON.stringify(notification.payload)});
-  let body;try{body=await response.json()}catch{body=null}
-  const message=typeof body?.message==='string'?body.message:'';
-  if(response.status===429)state='rate_limited';
-  else if(/needs activation|activate form|activation required/i.test(message))state='activation_required';
-  else if(body)state=response.ok&&(body.success===true||body.success==='true')?'accepted':'failed';
- }catch{state='unknown'}
- if(notification.id&&notification.attempt){
-  try{await window.aledApiFetch('/api/pages-notification-result',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:notification.id,attempt:notification.attempt,state})})}catch{}
- }
- return state;
+// Standard FormSubmit POST is required for resident autoresponses.
+// Keep the provider spam check enabled. It redirects to our receipt afterward.
+window.sendFormNotification=async(notification,nextUrl)=>{
+ if(!notification)return false;
+ const next=new URL(nextUrl,window.location.href);
+ if(next.origin!==window.location.origin)throw Error('Invalid receipt URL.');
+ const form=document.createElement('form');form.method='POST';form.action=notification.endpoint;form.hidden=true;
+ const payload={...notification.payload,_next:next.href};
+ for(const [name,value] of Object.entries(payload)){const field=document.createElement('input');field.type='hidden';field.name=name;field.value=String(value);form.append(field)}
+ document.body.append(form);
+ // This records handoff, not delivery. Only the provider can verify email delivery.
+ if(notification.id&&notification.attempt){try{await window.aledApiFetch('/api/pages-notification-result',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:notification.id,attempt:notification.attempt,state:'submitted'}),signal:AbortSignal.timeout(5000)})}catch{}}
+ form.submit();return true;
 };
