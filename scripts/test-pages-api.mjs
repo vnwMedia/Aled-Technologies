@@ -6,6 +6,8 @@ async function call(method,path='',body,token=a,from=origin){const r=await fetch
 try{
  assert.equal((await call('GET','',undefined,a,'https://untrusted.example')).r.status,403);
  assert.equal((await call('GET','',undefined,null)).r.status,401);
+ const customPre=await call('OPTIONS','',undefined,a,'https://99hudsoncondos.aled.tech');assert.equal(customPre.r.status,204);assert.equal(customPre.r.headers.get('Access-Control-Allow-Origin'),'https://99hudsoncondos.aled.tech');
+ for(const invalid of ['http://99hudsoncondos.aled.tech','https://99hudsoncondos.aled.tech.evil.example','https://aled.tech'])assert.equal((await call('OPTIONS','',undefined,a,invalid)).r.status,403);
  const pre=await call('OPTIONS');assert.equal(pre.r.status,204);assert.equal(pre.r.headers.get('Access-Control-Allow-Origin'),origin);
  const created=await call('POST','',{date:'2026-11-24',slot:3,name:'Pages Local Test',apartment:'PAGES1',units:1,email:'sample@example.com',phone:'2015550123',requestKey:crypto.randomUUID()});assert.equal(created.r.status,201);id=created.data.id;assert.equal(created.data.appointments[0].start_minutes,840);
  assert.equal((await call('GET')).data.appointments.some(x=>x.id===id),true);assert.equal((await call('GET','',undefined,b)).data.appointments.length,0);

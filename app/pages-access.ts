@@ -1,7 +1,7 @@
-const PUBLIC_ORIGIN='https://vnwmedia.github.io';
+const PUBLIC_ORIGINS=new Set(['https://vnwmedia.github.io','https://99hudsoncondos.aled.tech']);
 export function allowedOrigin(req:Request){
  const origin=req.headers.get('Origin');
- if(origin===PUBLIC_ORIGIN)return origin;
+ if(origin&&PUBLIC_ORIGINS.has(origin))return origin;
  // Loopback origins are accepted only by a loopback development server.
  const host=new URL(req.url).hostname;
  if(['localhost','127.0.0.1'].includes(host)&&origin&&/^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin))return origin;
