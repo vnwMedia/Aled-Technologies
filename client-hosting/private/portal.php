@@ -2,9 +2,9 @@
 declare(strict_types=1);
 // Loaded from outside the subdomain's document root. No credentials are required.
 function portal_db(?string $path=null): SQLite3 {
-    SQLite3::enableExceptions(true);
     umask(0077);
     $db = new SQLite3($path ?? __DIR__ . '/appointments.sqlite');
+    $db->enableExceptions(true);
     $db->busyTimeout(10000);
     $db->exec('PRAGMA journal_mode=WAL');
     $db->exec('CREATE TABLE IF NOT EXISTS appointments (
@@ -44,16 +44,17 @@ function notification(array $a): array {
       '_autoresponse'=>'Thank you for requesting maintenance at 99 Hudson Condominiums. Your request details are included below. Appointments are only confirmed once at least 5 units are scheduled for the same day. This email acknowledges receipt and does not confirm the appointment. Please keep your request reference and check the booking portal for current status.',
       '_subject'=>'ALED 99 Hudson – Maintenance request – Unit '.$a['apartment'],'_template'=>'table','_replyto'=>$a['email'],'_url'=>'https://99hudsoncondos.aled.tech/']];
 }
+function text_length(string $s): int {return preg_match_all('/./us',$s) ?: strlen($s);}
 function validate_booking(array $b): ?string {
     if(!valid_date($b['date']??null))return 'Choose a weekday in November 2026, from November 2 through November 30, that is not in the past.';
     if(!is_int($b['slot']??null)||$b['slot']<0||$b['slot']>3)return 'Choose one of the 4 appointment windows.';
     foreach(['name','apartment','email','phone','requestKey'] as $key)if(!is_string($b[$key]??null))return 'Please complete all required fields.';
-    if(mb_strlen(trim($b['name']))<2||mb_strlen($b['name'])>120)return 'Enter your full name (2–120 characters).';
+    if(text_length(trim($b['name']))<2||text_length($b['name'])>120)return 'Enter your full name (2–120 characters).';
     if(!preg_match('/^[a-zA-Z0-9 -]{1,20}$/D',trim($b['apartment']))||!preg_replace('/[^A-Z0-9]/','',strtoupper($b['apartment'])))return 'Enter a valid unit number.';
     if(!is_int($b['units']??null)||$b['units']<1||$b['units']>100)return 'Number of Heat Pumps (HVACs) in Your Unit must be a whole number from 1 to 100.';
     if(strlen($b['email'])>254||!preg_match('/^[^\s@]+@[^\s@]+\.[^\s@]+$/D',trim($b['email'])))return 'Enter a valid email address.';
     $n=strlen(preg_replace('/\D/','',$b['phone']));if(strlen($b['phone'])>40||$n<10||$n>15)return 'Enter a valid phone number.';
-    if(isset($b['comments'])&&(!is_string($b['comments'])||mb_strlen($b['comments'])>2000))return 'Additional comments must be 2,000 characters or fewer.';
+    if(isset($b['comments'])&&(!is_string($b['comments'])||text_length($b['comments'])>2000))return 'Additional comments must be 2,000 characters or fewer.';
     if(!preg_match('/^[\w-]{16,64}$/D',$b['requestKey']))return 'Invalid request identifier. Please refresh and try again.';
     return null;
 }

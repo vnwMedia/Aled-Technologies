@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 require __DIR__.'/portal.php';
-SQLite3::enableExceptions(true);
 $db=portal_db(':memory:');
 function check($yes,$message){if(!$yes)throw new RuntimeException($message);}
 function sample($n,$slot=0,$date='2026-11-02'){return ['date'=>$date,'slot'=>$slot,'name'=>'Sample Resident','apartment'=>'TEST'.$n,'units'=>2,'email'=>'sample@example.com','phone'=>'2125550100','comments'=>"Test comment\nsecond line",'requestKey'=>'test-request-key-'.$n];}
