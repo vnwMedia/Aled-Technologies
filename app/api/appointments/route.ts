@@ -33,7 +33,7 @@ export async function POST(req:Request){
  if(inserted.meta.changes!==1)return json({error:'That appointment window is no longer available. Choose another window or day.'},409);
  const notification=await prepareNotification(db(), env as any, id, uid, new URL(req.url).origin);
  return json({id,notification,appointments:await list(uid)},201);
- }catch(e){if(String(e).includes('UNIQUE constraint failed')){const repeated=await db().prepare('SELECT id FROM appointments WHERE user_id=? AND request_key=?').bind(uid,body.requestKey).first();if(repeated)return json({id:repeated.id,appointments:await list(uid)});return json({error:'That time or apartment already has a request for this day. Select another time or review your appointments.'},409);}return json({error:'Your request could not be saved. Please try again.'},503)}
+ }catch(e){if(String(e).includes('UNIQUE constraint failed')){const repeated=await db().prepare('SELECT id FROM appointments WHERE user_id=? AND request_key=?').bind(uid,body.requestKey).first();if(repeated)return json({id:repeated.id,appointments:await list(uid)});return json({error:'That time or unit already has a request for this day. Select another time or review your appointments.'},409);}return json({error:'Your request could not be saved. Please try again.'},503)}
 }
 export async function DELETE(req:Request){
  const uid=user(req);if(!uid)return json({error:'Please sign in to manage appointments.'},401);

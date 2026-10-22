@@ -84,3 +84,6 @@ Optional additional comments (up to 2,000 characters) are saved with the request
 
 ### October 22 scheduling update
 New requests use four two-hour arrival windows: 8–10 AM, 10 AM–noon, noon–2 PM, and 2–4 PM Eastern Time. Each supports three distinct apartments (12 daily). Existing requests keep their recorded times; their start times count toward the containing window. Remaining capacities and daily progress counts are hidden from the customer interface. The sidebar includes the Association preventive maintenance charge and access requirements.
+
+### Condominium wording and booking dates
+The portal, receipts, calendar files and email notifications use Unit for the residence and Heat Pumps (HVACs) for the equipment count. New bookings are restricted to weekdays November 2–30, 2026, in the date selector and server validation. Existing saved requests remain available for review and cancellation. The supplied ALED logo is used unchanged.

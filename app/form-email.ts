@@ -12,10 +12,10 @@ export function createFormNotification(config:MailEnv,appointment:any,origin:str
  if(config.FORM_EMAIL_ENABLED!=='true'||!to||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to))return null;
  const date=new Date(appointment.date+'T12:00:00Z').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric',timeZone:'UTC'});
  return {endpoint:'https://formsubmit.co/'+encodeURIComponent(to),payload:{
- name:appointment.name,email:appointment.email,'Apartment Number':appointment.apartment,'Number of Units':String(appointment.units),'Phone Number':appointment.phone,'Requested Date':date,'Requested Time':appointmentTime(appointment)+' Eastern Time','Request Reference':appointment.id,'Additional Comments':appointment.comments||'None provided',
- 'Appointment Status':'Appointment requested; confirmation requires at least 5 apartments scheduled for the same day. Check the portal for current status.',
- _autoresponse:'Thank you for requesting maintenance at 99 Hudson St. Apartments. Your request details are included below. Appointments are only confirmed once at least 5 apartments are scheduled for the same day. This email acknowledges receipt and does not confirm the appointment. Please keep your request reference and check the booking portal for current status.',
- _subject:'ALED 99 Hudson – Maintenance request – Apartment '+appointment.apartment,_template:'table',_replyto:appointment.email,_url:origin+'/'}};
+ name:appointment.name,email:appointment.email,'Unit Number':appointment.apartment,'Number of Heat Pumps (HVACs) in Your Unit':String(appointment.units),'Phone Number':appointment.phone,'Requested Date':date,'Requested Time':appointmentTime(appointment)+' Eastern Time','Request Reference':appointment.id,'Additional Comments':appointment.comments||'None provided',
+ 'Appointment Status':'Appointment requested; confirmation requires at least 5 units scheduled for the same day. Check the portal for current status.',
+ _autoresponse:'Thank you for requesting maintenance at 99 Hudson Condominiums. Your request details are included below. Appointments are only confirmed once at least 5 units are scheduled for the same day. This email acknowledges receipt and does not confirm the appointment. Please keep your request reference and check the booking portal for current status.',
+ _subject:'ALED 99 Hudson – Maintenance request – Unit '+appointment.apartment,_template:'table',_replyto:appointment.email,_url:origin+'/'}};
 }
 export async function prepareNotification(db:any,config:MailEnv,id:string,uid:string,origin:string){
  const appointment=await db.prepare('SELECT * FROM appointments WHERE id=? AND user_id=?').bind(id,uid).first();

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 const base=process.env.TEST_BASE_URL||'http://127.0.0.1:8766';if(!['127.0.0.1','localhost'].includes(new URL(base).hostname))throw new Error('Integration tests must run against local storage only.');
-const run=crypto.randomUUID(),uid='test-'+run,other='other-'+run,date='2027-03-02',created=[];
+const run=crypto.randomUUID(),uid='test-'+run,other='other-'+run,date='2026-11-23',created=[];
 async function request(method,path='',body,actor=uid,origin=base){const r=await fetch(base+'/api/appointments'+path,{method,headers:{...(actor?{'oai-authenticated-user-id':actor}:{}),'Content-Type':'application/json',Origin:origin},...(body?{body:JSON.stringify(body)}:{})});return {status:r.status,body:await r.json()}}
 const booking=(slot,apt=String(9000+slot))=>({date,slot,name:'Integration Resident',apartment:apt,units:2,email:'resident@example.com',phone:'2015550123',requestKey:crypto.randomUUID()});
 try{
@@ -12,6 +12,7 @@ try{
  assert.equal((await request('POST','',{...booking(0),slot:4})).status,400);
  assert.equal((await request('POST','',{...booking(0),comments:'x'.repeat(2001)})).status,400);
  assert.equal((await request('POST','',{...booking(0),comments:123})).status,400);
+ for(const blocked of ['2026-10-30','2026-11-01','2026-11-07','2026-11-08','2026-11-14','2026-11-15','2026-11-21','2026-11-22','2026-11-28','2026-11-29','2026-12-01','2027-11-02'])assert.equal((await request('POST','',{...booking(0),date:blocked})).status,400,blocked);
  const noAuthResult=await fetch(base+'/api/notification-result',{method:'POST',headers:{'Content-Type':'application/json',Origin:base},body:'{}'});assert.equal(noAuthResult.status,401);
  const forgedResult=await fetch(base+'/api/notification-result',{method:'POST',headers:{'Content-Type':'application/json',Origin:base,'oai-authenticated-user-id':uid},body:JSON.stringify({id:'unowned',attempt:'fake',state:'accepted'})});assert.equal((await forgedResult.json()).recorded,false);
  const first={...booking(0),name:'<sample resident>',comments:'Check bedroom unit.\n<script>alert(1)</script>'};let r=await request('POST','',first);assert.equal(r.status,201);created.push(r.body.id);assert.equal(r.body.appointments[0].start_minutes,480);assert.equal(r.body.appointments[0].day_count,1);assert.equal(r.body.appointments[0].comments,first.comments);assert.equal(r.body.appointments[0].notification_state,'not_configured');
