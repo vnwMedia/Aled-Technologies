@@ -9,7 +9,7 @@ export const TIMES = SLOT_MINUTES.map(m=>formatTime(m)+' – '+formatTime(m+120)
 export function validDate(value:unknown):value is string {
  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
  const d=new Date(value+'T12:00:00Z');
- return !Number.isNaN(d.valueOf()) && d.toISOString().slice(0,10)===value && value.slice(0,7)===new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).slice(0,7) && d.getUTCDay()!==0 && d.getUTCDay()!==6 && value>=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ return !Number.isNaN(d.valueOf()) && d.toISOString().slice(0,10)===value && value>='2026-11-01' && value.slice(0,7)===[ '2026-11-01',new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date())].sort().at(-1)!.slice(0,7) && d.getUTCDay()!==0 && d.getUTCDay()!==6 && value>=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 }
 export function normalizeApartment(value:string){return value.toUpperCase().replace(/[^A-Z0-9]/g,'')}
 export function validateBooking(b:any):string|null {

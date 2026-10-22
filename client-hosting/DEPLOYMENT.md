@@ -19,3 +19,7 @@ To update: build the existing frontend with `python3 scripts/build-pages.py`, th
 ## Current-month scheduling update — October 22, 2026
 
 The live portal now opens to the actual current month/year in Eastern Time. Only today and later weekdays in that month accept bookings. Other months remain viewable. The eligible month advances automatically, including December-to-January year changes; an open tab refreshes its calendar when the Eastern date changes. This replaces the earlier November-only campaign rule. Existing requests are retained. The four arrival windows, three bookings per window, and five-unit daily minimum are unchanged. The working-prototype banner and obsolete November start-date sidebar fact were removed from both the booking page and thank-you page. Server checks cover month/year rollover, leap years, past dates and weekends.
+
+## November start adjustment
+
+Scheduling opens at November 2026 even while the actual month is October; October requests are rejected by both browser and server. From December onward the active month follows the actual Eastern month/year. November 1 is shown but remains unavailable because it is Sunday. The explanatory paragraph below the submission button was removed; email processing itself is unchanged.

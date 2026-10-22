@@ -4,7 +4,7 @@ root=Path(__file__).resolve().parent.parent
 out=root/'docs';out.mkdir(exist_ok=True)
 html=json.loads((root/'app/site-html.ts').read_text()[len('export default '):].strip().removesuffix(';'))
 html=html.replace('made with this signed-in account.','made in this browser. Keep your browser data to manage them here.')
-html=html.replace('<script src="/form-notification.js" defer></script>','<script src="pages-config.js" defer></script><script src="form-notification.js" defer></script>').replace('<script src="/booking.js?v=current-month-2" defer></script>','<script src="booking.js?v=current-month-2" defer></script>')
+html=html.replace('<script src="/form-notification.js" defer></script>','<script src="pages-config.js" defer></script><script src="form-notification.js" defer></script>').replace('<script src="/booking.js?v=november-start-3" defer></script>','<script src="booking.js?v=november-start-3" defer></script>')
 html=html.replace('src="/aled-logo.png"','src="aled-logo.png"')
 shutil.copyfile(root/'public/aled-logo.png',out/'aled-logo.png')
 (out/'index.html').write_text(html)
