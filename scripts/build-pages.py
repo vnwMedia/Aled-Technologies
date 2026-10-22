@@ -20,7 +20,7 @@ notify=(root/'public/form-notification.js').read_text().replace("fetch('/api/not
 (out/'form-notification.js').write_text(notify)
 head=html[:html.index('<main class="wrap">')].replace('<title>99 Hudson Condominiums – Heat Pump Preventive Maintenance</title>','<title>Thank you | ALED Technologies</title>').replace('<h1>99 Hudson Condominiums<br>Heat Pump Preventive Maintenance</h1>','<h1>Your maintenance request</h1>').replace('A little maintenance. A lot of peace of mind.<br>Choose a convenient appointment and leave your details below.','99 Hudson Condominiums<br>Review your request details and manage your appointment below.')
 tail=html[html.index('<div class="notice">'):html.index('<script')]
-receipt=head+'<main style="max-width:1120px;margin:40px auto 56px;padding:0 24px"><section id="receipt" class="panel" style="max-width:760px;margin:auto" aria-live="polite">Loading your request…</section></main>'+tail+'<script src="pages-config.js"></script><script src="receipt.js"></script></body></html>'
+receipt=head+'<main style="max-width:1120px;margin:40px auto 56px;padding:0 24px"><section id="receipt" class="panel" style="max-width:760px;margin:auto" aria-live="polite">Loading your request…</section></main>'+tail+'<script src="pages-config.js"></script><script src="receipt.js?v=dispatch-1"></script></body></html>'
 (out/'thank-you.html').write_text(receipt)
 print('Built GitHub Pages frontend in docs/.')
 
