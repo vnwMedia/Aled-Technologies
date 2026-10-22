@@ -26,10 +26,11 @@ function rows(SQLite3Result $r): array {$out=[];while($a=$r->fetchArray(SQLITE3_
 function own(SQLite3 $db,string $uid): array {
     return rows(query($db,'SELECT a.id,a.date,a.slot,COALESCE(a.start_minutes,510+a.slot*30) AS start_minutes,a.end_minutes,a.name,a.apartment,a.units,a.email,a.phone,a.comments,a.canceled_at,a.notification_state,(SELECT COUNT(*) FROM appointments b WHERE b.date=a.date AND b.canceled_at IS NULL) AS day_count FROM appointments a WHERE user_id=? ORDER BY created_at DESC LIMIT 100',[$uid]));
 }
-function valid_date($v): bool {
-    if(!is_string($v)||!preg_match('/^2026-11-\d{2}$/D',$v)||$v<'2026-11-02'||$v>'2026-11-30')return false;
+function valid_date($v,?string $today=null): bool {
+    $today=$today??(new DateTimeImmutable('now',new DateTimeZone('America/New_York')))->format('Y-m-d');
+    if(!is_string($v)||!preg_match('/^\d{4}-\d{2}-\d{2}$/D',$v)||substr($v,0,7)!==substr($today,0,7)||$v<$today)return false;
     $d=DateTimeImmutable::createFromFormat('!Y-m-d',$v,new DateTimeZone('America/New_York'));
-    return $d&&$d->format('Y-m-d')===$v&&(int)$d->format('N')<=5&&$v>=(new DateTimeImmutable('now',new DateTimeZone('America/New_York')))->format('Y-m-d');
+    return $d&&$d->format('Y-m-d')===$v&&(int)$d->format('N')<=5;
 }
 function uuid(): string {$h=bin2hex(random_bytes(16));return substr($h,0,8).'-'.substr($h,8,4).'-4'.substr($h,13,3).'-'.dechex((hexdec($h[16])&3)|8).substr($h,17,3).'-'.substr($h,20);}
 function time_text(int $m): string {$h=intdiv($m,60);return ($h%12?:12).':'.str_pad((string)($m%60),2,'0',STR_PAD_LEFT).' '.($h<12?'AM':'PM');}
@@ -46,7 +47,7 @@ function notification(array $a): array {
 }
 function text_length(string $s): int {return preg_match_all('/./us',$s) ?: strlen($s);}
 function validate_booking(array $b): ?string {
-    if(!valid_date($b['date']??null))return 'Choose a weekday in November 2026, from November 2 through November 30, that is not in the past.';
+    if(!valid_date($b['date']??null))return 'Choose an available weekday in the current month that is not in the past.';
     if(!is_int($b['slot']??null)||$b['slot']<0||$b['slot']>3)return 'Choose one of the 4 appointment windows.';
     foreach(['name','apartment','email','phone','requestKey'] as $key)if(!is_string($b[$key]??null))return 'Please complete all required fields.';
     if(text_length(trim($b['name']))<2||text_length($b['name'])>120)return 'Enter your full name (2–120 characters).';

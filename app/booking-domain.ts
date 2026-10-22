@@ -9,12 +9,12 @@ export const TIMES = SLOT_MINUTES.map(m=>formatTime(m)+' – '+formatTime(m+120)
 export function validDate(value:unknown):value is string {
  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
  const d=new Date(value+'T12:00:00Z');
- return !Number.isNaN(d.valueOf()) && d.toISOString().slice(0,10)===value && value>=START_DATE && value<=END_DATE && d.getUTCDay()!==0 && d.getUTCDay()!==6 && value>=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ return !Number.isNaN(d.valueOf()) && d.toISOString().slice(0,10)===value && value.slice(0,7)===new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date()).slice(0,7) && d.getUTCDay()!==0 && d.getUTCDay()!==6 && value>=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 }
 export function normalizeApartment(value:string){return value.toUpperCase().replace(/[^A-Z0-9]/g,'')}
 export function validateBooking(b:any):string|null {
  if(!b||typeof b!=='object')return 'Invalid request.';
- if(!validDate(b.date))return 'Choose a weekday in November 2026, from November 2 through November 30, that is not in the past.';
+ if(!validDate(b.date))return 'Choose an available weekday in the current month that is not in the past.';
  if(!Number.isInteger(b.slot)||b.slot<0||b.slot>=TIMES.length)return 'Choose one of the 4 appointment windows.';
  for(const key of ['name','apartment','email','phone','requestKey'])if(typeof b[key]!=='string')return 'Please complete all required fields.';
  if(b.name.trim().length<2||b.name.length>120)return 'Enter your full name (2–120 characters).';
