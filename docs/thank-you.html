@@ -14,9 +14,25 @@
 .hero h1{font-size:40px;line-height:1.2}.date-row>div{width:68%}@media(max-width:760px){.hero h1{font-size:30px}.date-row>div{width:100%}.logo img{width:112px;height:86px}}
 .logo img{transform:scale(1.2);transform-origin:left center}
 .date-row{align-items:flex-start}.date-label{font-size:12px;font-weight:bold;margin-bottom:8px}.month-calendar{border:1px solid var(--line);border-radius:5px;background:#fff;padding:16px;max-width:420px}.month-calendar h3{font:20px Georgia;color:var(--navy);margin:0 0 17px;text-align:center}.calendar-weekdays,.calendar-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.calendar-weekdays{font-size:11px;color:var(--muted);text-align:center;margin-bottom:8px}.calendar-day{border:1px solid transparent;background:#f1f4f8;color:var(--navy);border-radius:3px;min-width:0;min-height:36px;font:13px Arial;cursor:pointer}.calendar-day:hover:enabled{border-color:var(--navy)}.calendar-day[aria-pressed=true]{background:var(--navy);color:#fff}.calendar-day:disabled{background:#fafafa;color:#b1b6be;cursor:not-allowed;text-decoration:line-through}.selected-date{font-size:12px;color:var(--navy);margin:12px 0 0}.date-row .timezone{padding-top:8px}@media(max-width:760px){.month-calendar{max-width:none;width:100%}}
+
+/* Approved option 2: compact grouped brand and contact header. */
+header.compact-header{display:block;padding:0;background:white;border-bottom:1px solid #e4e8ed}
+.compact-header .header-inner{max-width:1120px;margin:auto;padding:5px 24px;display:flex;align-items:center;gap:24px}
+.compact-header .brand-logo{display:block;flex:none;text-decoration:none}
+.compact-header .header-mark{display:block;width:124px;height:95px;object-fit:contain}
+.compact-header .header-brand{border-left:1px solid #dbe1e9;padding-left:24px}
+.compact-header .header-portal{font:10px/1.5 Arial;letter-spacing:1.7px;color:#5b6b80}
+.compact-header .header-brand strong{display:block;font:20px/1.5 Georgia;color:#172f55;margin-top:5px}
+.compact-header .header-address{font:11px/1.5 Arial;color:#718095;margin-top:4px}
+.compact-header .header-support{margin-left:auto;text-align:right}
+.compact-header .header-support span{display:block;font:10px/1.5 Arial;color:#718095;letter-spacing:.5px}
+.compact-header a{color:inherit;text-decoration:none}
+.compact-header .header-phone{display:block;font:bold 18px/1.5 Arial;color:#17355f;margin:2px 0}
+.compact-header .header-email{font:11px/1.5 Arial;color:#45556d;white-space:nowrap}
+@media(max-width:700px){.compact-header .header-inner{padding:5px 20px;gap:14px;flex-wrap:wrap}.compact-header .header-mark{width:105px;height:80px}.compact-header .header-brand{padding-left:14px}.compact-header .header-brand strong{font-size:16px}.compact-header .header-portal{font-size:9px;letter-spacing:1px}.compact-header .header-address{display:none}.compact-header .header-support{display:flex;width:100%;justify-content:space-between;align-items:center;border-top:1px solid #edf0f4;padding-top:7px;margin-bottom:7px;text-align:left}.compact-header .header-support span{display:none}.compact-header .header-phone{font-size:13px}}
 </style></head><body>
-<div class="contact"><span>233 Water St, New York, NY 10038</span><a href="mailto:dispatch@aledtechnologies.com">dispatch@aledtechnologies.com</a><a href="tel:9178638286">917-863-8286</a></div>
-<header><a class="logo" href="https://www.aled.tech/"><img src="aled-logo.png" alt="ALED Technologies" width="138" height="106" style="display:block;object-fit:contain"></a><span class="resident">RESIDENT MAINTENANCE PORTAL</span></header>
+<header class="compact-header"><div class="header-inner"><a class="brand-logo" href="https://www.aled.tech/"><img class="header-mark" src="aled-logo.png" alt="ALED Technologies" width="124" height="95"></a><div class="header-brand"><div class="header-portal">RESIDENT MAINTENANCE PORTAL</div><strong>99 Hudson Condominiums</strong><div class="header-address">233 Water St, New York, NY 10038</div></div><div class="header-support"><span>NEED HELP SCHEDULING?</span><a class="header-phone" href="tel:9178638286">917-863-8286</a><a class="header-email" href="mailto:dispatch@aledtechnologies.com">dispatch@aledtechnologies.com</a></div></div></header>
+
 <section class="hero"><div class="eyebrow">Exclusively for 99 Hudson residents</div><h1>Your maintenance request</h1><p>99 Hudson Condominiums<br>Review your request details and manage your appointment below.</p></section>
 <div class="preview">WORKING PROTOTYPE · Submission emails go to ALED Technologies</div>
 <main style="max-width:1120px;margin:40px auto 56px;padding:0 24px"><section id="receipt" class="panel" style="max-width:760px;margin:auto" aria-live="polite">Loading your request…</section></main><div class="notice"><strong>Appointment confirmation</strong><span>"Please note that maintenance appointments will only be confirmed if at least 5 units are scheduled for the same day."</span></div>
