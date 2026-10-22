@@ -1,0 +1,1 @@
+ALTER TABLE `appointments` ADD `end_minutes` integer;

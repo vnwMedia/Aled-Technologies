@@ -4,10 +4,10 @@ A working resident maintenance scheduling prototype. The contact bar, logo, hero
 
 ## Features
 
-- Five time choices with two apartments per time (ten appointments total) every day from November 2, 2026, at 8:30 AM, 10:15 AM, noon, 1:45 PM, and 3:30 PM Eastern.
-- The five start times are evenly distributed over the 8:30 AM–3:30 PM window. Each can be selected twice. Existing bookings retain their originally scheduled times.
+- Four arrival windows with three apartments per window (twelve appointments total) every day from November 2, 2026: 8–10 AM, 10 AM–noon, noon–2 PM, and 2–4 PM Eastern.
+- Availability counts are hidden from residents. Existing bookings retain their originally scheduled times.
 - Required name, apartment number, number of units, email, and phone fields.
-- Shared Cloudflare D1 storage, server validation, atomic capacity enforcement (maximum two apartments per start time), one active request per apartment per day, and retry-safe submissions.
+- Shared Cloudflare D1 storage, server validation, atomic capacity enforcement (maximum three apartments per arrival window), one active request per apartment per day, and retry-safe submissions.
 - Account-scoped appointment history and cancellation; canceled slots become available again.
 - Daily status is calculated from active, distinct apartment requests: fewer than five is pending; five or more is confirmed. Cancellation can return a day to pending.
 - Calendar downloads reflect the status at download time. Their 30-minute end time is a placeholder; downloaded calendar events do not auto-update after changes.
@@ -42,7 +42,7 @@ node scripts/test-bookings.mjs
 node scripts/test-form-email.mjs
 ```
 
-The integration test refuses non-loopback targets. It checks validation, authentication, same-origin writes, retry safety, duplicate apartments, simultaneous booking conflicts, ten-slot capacity, the five-apartment threshold, account isolation, cancellation, and reopened slots. Test records are canceled in a finally block and stay in local storage only.
+The integration test refuses non-loopback targets. It checks validation, authentication, same-origin writes, retry safety, duplicate apartments, simultaneous booking conflicts, twelve-appointment capacity, the five-apartment threshold, account isolation, cancellation, and reopened slots. Test records are canceled in a finally block and stay in local storage only.
 
 ## Deployment
 
@@ -81,3 +81,6 @@ Run `node scripts/test-pages-api.mjs` against the local built Worker to verify o
 
 ### Comments and two email recipients
 Optional additional comments (up to 2,000 characters) are saved with the request and included in the receipt and notification. FormSubmit receives a standard browser POST after the booking is saved. Its spam check stays enabled because autoresponses do not work with AJAX or disabled reCAPTCHA. It sends the owner notification to contactus@vnwmedia.com and an acknowledgment with a copy of the submission to the resident email, then redirects to the local thank-you page. Acknowledgments explain that the five-apartment minimum still applies. The stored `submitted` notification state records a handoff, not proven inbox delivery; abandoned spam checks may leave a booking saved without email. Existing AJAX-era requests are not automatically emailed again.
+
+### October 22 scheduling update
+New requests use four two-hour arrival windows: 8–10 AM, 10 AM–noon, noon–2 PM, and 2–4 PM Eastern Time. Each supports three distinct apartments (12 daily). Existing requests keep their recorded times; their start times count toward the containing window. Remaining capacities and daily progress counts are hidden from the customer interface. The sidebar includes the Association preventive maintenance charge and access requirements.
