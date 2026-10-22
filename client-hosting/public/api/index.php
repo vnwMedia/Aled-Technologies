@@ -13,7 +13,7 @@ if(strlen($raw)>8192){http_response_code(413);echo json_encode(['error'=>'Reques
 $body=$raw===''?[]:json_decode($raw,true);
 if(!is_array($body)){http_response_code(400);echo json_encode(['error'=>'Invalid request.']);exit;}
 try{
- require dirname(__DIR__,3).'/99hudson-private/portal.php';
+ require dirname(__DIR__,2).'/99hudson-private/portal.php';
  [$status,$value]=portal_handle(portal_db(),'browser:'.hash('sha256',$m[1]),$method,($_GET['action']??'')==='notification'?'notification':'bookings',$_GET['date']??null,$body);
  http_response_code($status);echo json_encode($value,JSON_UNESCAPED_UNICODE|JSON_INVALID_UTF8_SUBSTITUTE);
 }catch(Throwable $e){error_log('99 Hudson portal error: '.$e->getMessage());http_response_code(503);echo json_encode(['error'=>'Your request could not be completed. Please try again.']);}
