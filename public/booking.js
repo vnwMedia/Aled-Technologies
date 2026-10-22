@@ -5,7 +5,10 @@ function appointmentTime(a){return formatTime(appointmentMinutes(a))+(a.end_minu
 const TIMES=SLOT_MINUTES.map(m=>formatTime(m)+' – '+formatTime(m+120));
 const $=id=>document.getElementById(id),form=$('booking'),date=$('date'),slots=$('slots'),summary=$('summary'),result=$('result'),dayState=$('day-state'),mine=$('my-bookings'),submit=form.querySelector('[type=submit]');
 let selected=null,occupied=[],dayCount=0,appointments=[],requestKey=crypto.randomUUID(),loading=false,loadSeq=0;
-const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());for(const option of date.options)option.disabled=option.value<today;date.value=Array.from(date.options).find(o=>!o.disabled)?.value||'';
+const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+const calendarDays=Array.from(document.querySelectorAll('#month-calendar [data-date]'));for(const button of calendarDays)button.disabled=button.disabled||button.dataset.date<today;date.value=calendarDays.find(b=>!b.disabled)?.dataset.date||'';
+function updateCalendar(){for(const button of calendarDays)button.setAttribute('aria-pressed',String(button.dataset.date===date.value));$('selected-date').textContent=date.value?dateText():'No booking dates are available.'}
+for(const button of calendarDays)button.addEventListener('click',()=>{if(button.disabled)return;date.value=button.dataset.date;updateCalendar();date.dispatchEvent(new Event('change',{bubbles:true}))});updateCalendar();
 function validBookingDate(){return /^2026-11-/.test(date.value)&&date.value>='2026-11-02'&&date.value<='2026-11-30'&&date.value>=today&&![0,6].includes(new Date(date.value+'T12:00:00Z').getUTCDay())}
 function dateText(d=date.value){return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})}
 function el(tag,text,className){const n=document.createElement(tag);if(text)n.textContent=text;if(className)n.className=className;return n}
