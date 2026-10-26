@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
-// Loaded from outside the subdomain's document root. No credentials are required.
+// Loaded outside the subdomain document root.
+require_once __DIR__.'/mail-queue.php';
 function portal_db(?string $path=null): SQLite3 {
     umask(0077);
     $db = new SQLite3($path ?? __DIR__ . '/appointments.sqlite');
@@ -15,6 +16,7 @@ function portal_db(?string $path=null): SQLite3 {
       notification_state TEXT DEFAULT "pending",notification_attempt TEXT,
       UNIQUE(user_id,request_key))');
     $db->exec('CREATE UNIQUE INDEX IF NOT EXISTS active_unit ON appointments(date,apartment_key) WHERE canceled_at IS NULL');
+    hudson_mail_schema($db);
     return $db;
 }
 function query(SQLite3 $db,string $sql,array $args=[]): SQLite3Result {
@@ -36,7 +38,7 @@ function uuid(): string {$h=bin2hex(random_bytes(16));return substr($h,0,8).'-'.
 function time_text(int $m): string {$h=intdiv($m,60);return ($h%12?:12).':'.str_pad((string)($m%60),2,'0',STR_PAD_LEFT).' '.($h<12?'AM':'PM');}
 function notification(array $a): array {
     $d=(new DateTimeImmutable($a['date']))->format('l, F j, Y');
-    return ['id'=>$a['id'],'attempt'=>$a['notification_attempt'],'endpoint'=>'https://formsubmit.co/dispatch%40aledtechnologies.com','payload'=>[
+    return ['id'=>$a['id'],'attempt'=>$a['notification_attempt'],'endpoint'=>'https://formsubmit.co/d04c132828b6871daa7b0548c51727a8','payload'=>[
       'name'=>$a['name'],'email'=>$a['email'],'Unit Number'=>$a['apartment'],
       'Number of Heat Pumps (HVACs) in Your Unit'=>(string)$a['units'],'Phone Number'=>$a['phone'],
       'Requested Date'=>$d,'Requested Time'=>time_text((int)$a['start_minutes']).' – '.time_text((int)$a['end_minutes']).' Eastern Time',
@@ -80,18 +82,26 @@ function portal_handle(SQLite3 $db,string $uid,string $method,string $action,?st
     }
     if($method!=='POST')return [405,['error'=>'Method not allowed.']];
     if($error=validate_booking($b))return [400,['error'=>$error]];
+    $mailConfig=hudson_mail_config();
     $db->exec('BEGIN IMMEDIATE');
     try{
         $prior=query($db,'SELECT id FROM appointments WHERE user_id=? AND request_key=?',[$uid,$b['requestKey']])->fetchArray(SQLITE3_ASSOC);
         if($prior){$db->exec('COMMIT');return [200,['id'=>$prior['id'],'appointments'=>own($db,$uid)]];}
+        if($mailConfig){
+            if(!hudson_mail_rate($db,$b['_source_key']??'local-test')){$db->exec('ROLLBACK');return [429,['error'=>'Too many requests. Please wait or contact dispatch.']];}
+            if(!empty($b['website'])){$db->exec('ROLLBACK');return [400,['error'=>'Unable to submit this request.']];}
+            $recent=(int)query($db,'SELECT COUNT(*) AS n FROM appointments WHERE created_at>? AND (user_id=? OR lower(email)=lower(?))',[gmdate('c',time()-3600),$uid,trim($b['email'])])->fetchArray(SQLITE3_ASSOC)['n'];
+            if($recent>=5){$db->exec('ROLLBACK');return [429,['error'=>'Too many requests. Please wait before submitting again or contact dispatch.']];}
+        }
         $active=rows(query($db,'SELECT apartment_key,COALESCE(start_minutes,510+slot*30) AS m FROM appointments WHERE date=? AND canceled_at IS NULL',[$b['date']]));
         $key=preg_replace('/[^A-Z0-9]/','',strtoupper($b['apartment']));$start=[480,600,720,840][$b['slot']];
         if(array_filter($active,fn($a)=>$a['apartment_key']===$key)){$db->exec('ROLLBACK');return [409,['error'=>'That time or unit already has a request for this day. Select another time or review your appointments.']];}
         if(count($active)>=12||count(array_filter($active,fn($a)=>$a['m']>=$start&&$a['m']<$start+120))>=3){$db->exec('ROLLBACK');return [409,['error'=>'That appointment window is no longer available. Choose another window or day.']];}
         $id=uuid();$attempt=uuid();
         query($db,"INSERT INTO appointments(id,user_id,request_key,date,slot,start_minutes,end_minutes,name,apartment,apartment_key,units,email,phone,comments,created_at,notification_state,notification_attempt) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,'sending',?)",[$id,$uid,$b['requestKey'],$b['date'],$b['slot'],$start,$start+120,trim($b['name']),trim($b['apartment']),$key,$b['units'],trim($b['email']),trim($b['phone']),trim($b['comments']??''),gmdate('c'),$attempt]);
-        $db->exec('COMMIT');
         $a=query($db,'SELECT * FROM appointments WHERE id=?',[$id])->fetchArray(SQLITE3_ASSOC);
-        return [201,['id'=>$id,'notification'=>notification($a),'appointments'=>own($db,$uid)]];
+        if($mailConfig){hudson_mail_enqueue($db,$a,$mailConfig);query($db,"UPDATE appointments SET notification_state='email_queued',notification_attempt=NULL WHERE id=?",[$id]);}
+        $db->exec('COMMIT');
+        return [201,['id'=>$id,'notification'=>$mailConfig?null:notification($a),'appointments'=>own($db,$uid)]];
     }catch(Throwable $e){$db->exec('ROLLBACK');throw $e;}
 }

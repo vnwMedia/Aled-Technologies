@@ -43,3 +43,11 @@ yarn-error.log*
 
 # OS metadata
 .DS_Store
+
+# Client-hosted runtime data and private email configuration
+/client-hosting/**/mail-config.json
+/client-hosting/**/*.sqlite*
+/client-hosting/**/*.sql
+/client-hosting/**/*.log
+/client-hosting/**/*.lock
+/client-hosting/**/__pycache__/

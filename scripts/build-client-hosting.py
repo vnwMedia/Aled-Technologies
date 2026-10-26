@@ -13,3 +13,11 @@ for name in ['index.html','thank-you.html']:
 for p in out.glob('*.js'):
     p.write_text(p.read_text().replace('/api/pages-bookings','/api/bookings').replace('/api/pages-notification-result','/api/notification-result'))
 print('Built standalone client hosting files. No external booking backend required.')
+
+# Client-hosted mail uses a durable local queue, never an external form redirect.
+for asset in (root/'client-hosting/assets').glob('*.js'):
+    shutil.copyfile(asset,out/asset.name)
+for name in ['index.html','thank-you.html']:
+    p=out/name
+    import re
+    p.write_text(re.sub(r'(booking\.js|receipt\.js|form-notification\.js)(?:\?[^\" ]*)?',r'\1?v=hosting-relay-1',p.read_text()))
