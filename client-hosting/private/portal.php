@@ -30,7 +30,11 @@ function own(SQLite3 $db,string $uid): array {
 }
 function valid_date($v,?string $today=null): bool {
     $today=$today??(new DateTimeImmutable('now',new DateTimeZone('America/New_York')))->format('Y-m-d');
-    if(!is_string($v)||!preg_match('/^\d{4}-\d{2}-\d{2}$/D',$v)||$v<'2026-11-01'||substr($v,0,7)!==substr(max($today,'2026-11-01'),0,7)||$v<$today)return false;
+    $now=new DateTimeImmutable($today,new DateTimeZone('America/New_York'));
+    $last=$now->modify('last day of this month');
+    $latest=$now>=$last->modify('-14 days')?$now->modify('first day of next month')->format('Y-m'):$now->format('Y-m');
+    $latest=max($latest,'2026-11');
+    if(!is_string($v)||!preg_match('/^\d{4}-\d{2}-\d{2}$/D',$v)||$v<'2026-11-01'||substr($v,0,7)<substr(max($today,'2026-11-01'),0,7)||substr($v,0,7)>$latest||$v<$today)return false;
     $d=DateTimeImmutable::createFromFormat('!Y-m-d',$v,new DateTimeZone('America/New_York'));
     return $d&&$d->format('Y-m-d')===$v&&(int)$d->format('N')<=5;
 }
@@ -49,7 +53,7 @@ function notification(array $a): array {
 }
 function text_length(string $s): int {return preg_match_all('/./us',$s) ?: strlen($s);}
 function validate_booking(array $b): ?string {
-    if(!valid_date($b['date']??null))return 'Choose an available weekday in the active scheduling month, starting November 2026, that is not in the past.';
+    if(!valid_date($b['date']??null))return 'Choose a future weekday in a month open for booking.';
     if(!is_int($b['slot']??null)||$b['slot']<0||$b['slot']>3)return 'Choose one of the 4 appointment windows.';
     foreach(['name','apartment','email','phone','requestKey'] as $key)if(!is_string($b[$key]??null))return 'Please complete all required fields.';
     if(text_length(trim($b['name']))<2||text_length($b['name'])>120)return 'Enter your full name (2–120 characters).';

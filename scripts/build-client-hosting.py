@@ -21,3 +21,7 @@ for name in ['index.html','thank-you.html']:
     p=out/name
     import re
     p.write_text(re.sub(r'(booking\.js|receipt\.js|form-notification\.js)(?:\?[^\" ]*)?',r'\1?v=hosting-relay-1',p.read_text()))
+
+# Refresh booking assets when calendar eligibility changes.
+p=out/'index.html'
+p.write_text(re.sub(r'booking\.js(?:\?[^" ]*)?','booking.js?v=two-week-calendar-1',p.read_text()))

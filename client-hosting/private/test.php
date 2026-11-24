@@ -22,7 +22,7 @@ check(portal_handle($db,'owner1','GET','bookings',null,[])[1]['appointments'][0]
 echo "PASS: capacity, cancellation, idempotency, date restrictions, ownership, comments and email payload.\n";
 
 check(valid_date('2026-12-01','2026-12-01'),'December activates');
-check(!valid_date('2026-12-01','2026-11-30'),'future month blocked');
+check(valid_date('2026-12-01','2026-11-30'),'next month open before rollover');
 check(valid_date('2027-01-01','2027-01-01'),'year rollover');
 check(!valid_date('2026-12-31','2027-01-01'),'past year blocked');
 check(!valid_date('2027-01-02','2027-01-01'),'weekend blocked');
@@ -35,3 +35,16 @@ check(valid_date('2026-11-02','2026-10-22'),'November available before launch');
 check(!valid_date('2026-11-01','2026-10-22'),'November 1 Sunday blocked');
 check(!valid_date('2026-11-02','2026-12-01'),'November closed in December');
 echo "PASS: November start, October blocked and later-month rollover.\n";
+
+check(!valid_date('2026-12-01','2026-11-15'),'December closed before November 16');
+check(valid_date('2026-12-01','2026-11-16'),'December opens November 16');
+check(valid_date('2026-11-30','2026-11-16'),'current month remains available');
+check(!valid_date('2027-01-01','2026-12-16'),'January closed before December 17');
+check(valid_date('2027-01-01','2026-12-17'),'January opens December 17');
+check(!valid_date('2028-03-01','2028-02-14'),'leap February boundary before');
+check(valid_date('2028-03-01','2028-02-15'),'leap February opens March');
+check(!valid_date('2027-03-01','2027-02-13'),'ordinary February boundary before');
+check(valid_date('2027-03-01','2027-02-14'),'ordinary February opens March');
+check(!valid_date('2027-01-01','2026-11-24'),'month after next stays closed');
+check(valid_date('2035-01-01','2034-12-17'),'future years continue automatically');
+echo "PASS: 14-day opening, current month retained, year rollover, leap and ordinary February, future years.\n";
